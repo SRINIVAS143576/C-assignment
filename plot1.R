@@ -1,8 +1,16 @@
 library(dplyr)
 
+# Downlaod the file if not exist
+url = "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2Fhousehold_power_consumption.zip"
+file_name_zip = "household_power_consumption.zip"
+file_name = "household_power_consumption.txt"
+if (!file.exists(file_name_zip)) {
+  download.file(url, destfile = file_name_zip)
+}
+
 # Load the data
-file_name = "./data/household_power_consumption.txt"
-dat <- tbl_df(read.csv(file_name, sep = ";", as.is = T))
+dat <- tbl_df(read.csv(unz(file_name_zip, file_name), sep = ";", as.is = T)) %>%
+  filter(Date %in% c("1/2/2007", "2/2/2007"))
 
 # Clean the dataset
 dat[, 3:9] <- sapply(dat[, 3:9], as.numeric)
@@ -10,17 +18,14 @@ dat[, 3:9] <- sapply(dat[, 3:9], as.numeric)
 dat <- dat %>% 
   # Combine Date and Time to Datetime
   mutate(Datetime = as.POSIXct(paste(Date, Time), format="%d/%m/%Y %H:%M:%S")) %>% 
-  select(c("Datetime", names(dat)[3:9])) %>%
-  # Filter for the 2-day period
-  filter(Datetime >= as.POSIXct("2007-02-01", format = "%Y-%m-%d") & 
-           Datetime < as.POSIXct("2007-02-03", format = "%Y-%m-%d"))
+  select(c("Datetime", names(dat)[3:9]))
 
-# Plotting
+# Generate the PNG plot
+png(filename = 'plot1.png', width = 480, height = 480)
+
 hist(dat$Global_active_power, col = "red", 
      xlab = "Global Active Power (kilowatts)", 
      ylab = "Frequency", 
      main = "Global Active Power")
 
-# Generate the PNG plot
-dev.copy(png, "plot1.png")
 dev.off()
